@@ -34,12 +34,25 @@ type UpdateStaff struct {
 }
 
 type StaffGetListRequest struct {
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
-	Search string `json:"search"`
+	Offset   int    `json:"offset"`
+	Limit    int    `json:"limit"`
+	Search   string `json:"search"`
+	From     string `json:"from"`
+	To       string `json:"to"`
+	BranchId string `json:"branch_id"`
+	TarifID  string `json:"tarif_id"`
+	Type     string `json:"type"`
 }
 
 type StaffGetListResponse struct {
-	Count  int      `json:"count"`
-	Staffs []*Staff `json:"staffs"`
+	Count  int             `json:"count"`
+	Staffs []*Staff        `json:"staffs"`
+	List   []*GetTopStaffs `json:"list"`
+}
+
+type GetTopStaffs struct {
+	Name       string `json:"name"`
+	BranchName string `json:"branch_name"`
+	EarnedSum  int64  `json:"earned_sum"`
+	Type       string `json:"type"`
 }

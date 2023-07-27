@@ -44,6 +44,8 @@ type SalesGetListRequest struct {
 	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
 	Search string `json:"search"`
+	From   string `json:"from"`
+	To     string `json:"to"`
 }
 
 type SalesGetListResponse struct {

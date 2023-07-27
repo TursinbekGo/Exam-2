@@ -31,6 +31,13 @@ type BranchGetListRequest struct {
 }
 
 type BranchGetListResponse struct {
-	Count    int       `json:"count"`
-	Branches []*Branch `json:"branches"`
+	Count    int          `json:"count"`
+	Branches []*Branch    `json:"branches"`
+	List     []*TopBranch `json:"list"`
+}
+
+type TopBranch struct {
+	Day     string `json:"day"`
+	Address string `json:"address"`
+	Count   int64  `json:"count"`
 }

@@ -195,3 +195,44 @@ func (h *handler) DeleteBranch(c *gin.Context) {
 
 	h.handlerResponse(c, "create branch resposne", http.StatusNoContent, nil)
 }
+
+// GetTOP branchs godoc
+// @ID get_top_branchs
+// @Router /get_top_branchs [GET]
+// @Summary Get Top Branchs
+// @Description Get Top Branchs
+// @Tags Get Top Branchs
+// @Accept json
+// @Procedure json
+// @Param offset query string false "offset"
+// @Param limit query string false "limit"
+// @Param search query string false "search"
+// @Success 200 {object} Response{data=string} "Success Request"
+// @Response 400 {object} Response{data=string} "Bad Request"
+// @Failure 500 {object} Response{data=string} "Server error"
+func (h *handler) GetTopBranchs(c *gin.Context) {
+
+	offset, err := h.getOffsetQuery(c.Query("offset"))
+	if err != nil {
+		h.handlerResponse(c, "get list branch offset", http.StatusBadRequest, "invalid offset")
+		return
+	}
+
+	limit, err := h.getLimitQuery(c.Query("limit"))
+	if err != nil {
+		h.handlerResponse(c, "get list branch limit", http.StatusBadRequest, "invalid limit")
+		return
+	}
+
+	resp, err := h.strg.Branch().GetTopBranch(c.Request.Context(), &models.BranchGetListRequest{
+		Offset: offset,
+		Limit:  limit,
+		Search: c.Query("search"),
+	})
+	if err != nil {
+		h.handlerResponse(c, "storage.branch.get_list", http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	h.handlerResponse(c, "get list branch resposne", http.StatusOK, resp)
+}

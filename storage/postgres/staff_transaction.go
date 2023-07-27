@@ -157,7 +157,12 @@ func (r *staffTransactionRepo) GetList(ctx context.Context, req *models.StaffTra
 			deleted,
 			deleted_at
 		FROM staff_transaction
+		
+
 	`
+	// JOIN sales AS sl ON sl.id = st.sales_id
+	// 	JOIN branch AS b ON b.id = sl.branch_id
+	// 	JOIN staff AS sf ON sf.branch_id = b.id
 
 	if req.Offset > 0 {
 		offset = fmt.Sprintf(" OFFSET %d", req.Offset)
@@ -168,7 +173,7 @@ func (r *staffTransactionRepo) GetList(ctx context.Context, req *models.StaffTra
 	}
 
 	if req.Search != "" {
-		where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'`
+		where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'  AND sales_id '` + req.SalesId + `'  AND  staff_id  '` + req.StaffId + `'  AND  type  '` + req.Type + `' AND  amount  '` + req.Amount + `' `
 	}
 
 	query += where + offset + limit

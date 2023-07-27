@@ -52,6 +52,11 @@ func (h *handler) CreateSales(c *gin.Context) {
 			"amount":      resp.Price,
 		}
 		_, err = helper.DoRequest("http://localhost:8080/staffTransaction", "POST", body)
+
+		if err != nil {
+			h.handlerResponse(c, "storage.do request.cash cashier", http.StatusInternalServerError, err.Error())
+			return
+		}
 		if len(resp.ShopAssistantID) > 0 {
 			body = map[string]interface{}{
 				"sales_id":    resp.Id,
@@ -62,7 +67,10 @@ func (h *handler) CreateSales(c *gin.Context) {
 				"amount":      resp.Price,
 			}
 			_, err = helper.DoRequest("http://localhost:8080/staffTransaction", "POST", body)
-
+			if err != nil {
+				h.handlerResponse(c, "storage.do request.cash assistent", http.StatusInternalServerError, err.Error())
+				return
+			}
 		}
 	} else if resp.PaymentType == "Card" {
 		body = map[string]interface{}{
@@ -74,7 +82,10 @@ func (h *handler) CreateSales(c *gin.Context) {
 			"amount":      resp.Price,
 		}
 		_, err = helper.DoRequest("http://localhost:8080/staffTransaction", "POST", body)
-
+		if err != nil {
+			h.handlerResponse(c, "storage.do request.cash cahsier", http.StatusInternalServerError, err.Error())
+			return
+		}
 		if len(resp.ShopAssistantID) > 0 {
 			body = map[string]interface{}{
 				"sales_id":    resp.Id,
@@ -85,7 +96,10 @@ func (h *handler) CreateSales(c *gin.Context) {
 				"amount":      resp.Price,
 			}
 			_, err = helper.DoRequest("http://localhost:8080/staffTransaction", "POST", body)
-
+			if err != nil {
+				h.handlerResponse(c, "storage.do request.cash assistent", http.StatusInternalServerError, err.Error())
+				return
+			}
 		}
 	}
 
@@ -132,6 +146,8 @@ func (h *handler) GetByIdSales(c *gin.Context) {
 // @Param offset query string false "offset"
 // @Param limit query string false "limit"
 // @Param search query string false "search"
+// @Param from query string false "from"
+// @Param to query string false "to"
 // @Success 200 {object} Response{data=string} "Success Request"
 // @Response 400 {object} Response{data=string} "Bad Request"
 // @Failure 500 {object} Response{data=string} "Server error"
@@ -153,6 +169,8 @@ func (h *handler) GetListSales(c *gin.Context) {
 		Offset: offset,
 		Limit:  limit,
 		Search: c.Query("search"),
+		From:   c.Query("from"),
+		To:     c.Query("to"),
 	})
 	if err != nil {
 		h.handlerResponse(c, "storage.Sales.get_list", http.StatusInternalServerError, err.Error())
@@ -209,6 +227,182 @@ func (h *handler) UpdateSales(c *gin.Context) {
 	if err != nil {
 		h.handlerResponse(c, "storage.Sales.getById", http.StatusInternalServerError, err.Error())
 		return
+	}
+	cashier, err := h.strg.Staff().GetByID(c.Request.Context(), &models.StaffPrimaryKey{Id: resp.CashierID})
+	if err != nil {
+		h.handlerResponse(c, "storage.sales->staff.getById", http.StatusInternalServerError, err.Error())
+		return
+	}
+	tarif, err := h.strg.StaffTarif().GetByID(c.Request.Context(), &models.StaffTarifPrimaryKey{Id: cashier.TarifID})
+	if err != nil {
+		h.handlerResponse(c, "storage.sales->tarif.getById", http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if resp.Status == "cancel" {
+		if tarif.Type == "fixed" {
+			if resp.PaymentType == "Cash" {
+				if err != nil {
+					h.handlerResponse(c, "storage.staffTransactiom tarif.getById", http.StatusInternalServerError, err.Error())
+					return
+				}
+				cashier.Balance -= tarif.AmountForCash
+				updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+					Id:       cashier.Id,
+					BranchID: cashier.BranchID,
+					TarifID:  cashier.TarifID,
+					Type:     cashier.Type,
+					Name:     cashier.Name,
+					Balance:  cashier.Balance,
+				})
+				if err != nil {
+					h.handlerResponse(c, "storage.staffTransactiom staff.getById", http.StatusInternalServerError, err.Error())
+					return
+				}
+				h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				if len(resp.ShopAssistantID) > 0 {
+					shop_assistent, err := h.strg.Staff().GetByID(c.Request.Context(), &models.StaffPrimaryKey{Id: resp.ShopAssistantID})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->staff.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					shop_assistent.Balance -= tarif.AmountForCash
+					updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+
+						Id:       shop_assistent.Id,
+						BranchID: shop_assistent.BranchID,
+						TarifID:  shop_assistent.TarifID,
+						Type:     shop_assistent.Type,
+						Name:     shop_assistent.Name,
+						Balance:  shop_assistent.Balance,
+					})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->tarif.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				}
+
+			} else if resp.PaymentType == "Card" {
+				cashier.Balance -= tarif.AmountForCard
+				updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+					Id:       cashier.Id,
+					BranchID: cashier.BranchID,
+					TarifID:  cashier.TarifID,
+					Type:     cashier.Type,
+					Name:     cashier.Name,
+					Balance:  cashier.Balance,
+				})
+				if err != nil {
+					h.handlerResponse(c, "storage.staffTransactiom->staff.update", http.StatusInternalServerError, err.Error())
+					return
+				}
+				h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				if len(resp.ShopAssistantID) > 0 {
+					shop_assistent, err := h.strg.Staff().GetByID(c.Request.Context(), &models.StaffPrimaryKey{Id: resp.ShopAssistantID})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->staff assistent.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					shop_assistent.Balance -= tarif.AmountForCard
+					updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+						Id:       shop_assistent.Id,
+						BranchID: shop_assistent.BranchID,
+						TarifID:  shop_assistent.TarifID,
+						Type:     shop_assistent.Type,
+						Name:     shop_assistent.Name,
+						Balance:  shop_assistent.Balance,
+					})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->tarif.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				}
+
+			}
+		} else if tarif.Type == "percent" {
+			if resp.PaymentType == "Cash" {
+				if err != nil {
+					h.handlerResponse(c, "storage.staffTransactiom->tarif.getById", http.StatusInternalServerError, err.Error())
+					return
+				}
+				cashier.Balance -= (resp.Price * tarif.AmountForCash) / 100
+				updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+					Id:       cashier.Id,
+					BranchID: cashier.BranchID,
+					TarifID:  cashier.TarifID,
+					Type:     cashier.Type,
+					Name:     cashier.Name,
+					Balance:  cashier.Balance,
+				})
+				if err != nil {
+					h.handlerResponse(c, "storage.staffTransactiom->staff.getById", http.StatusInternalServerError, err.Error())
+					return
+				}
+				h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				if len(resp.ShopAssistantID) > 0 {
+					shop_assistent, err := h.strg.Staff().GetByID(c.Request.Context(), &models.StaffPrimaryKey{Id: resp.ShopAssistantID})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->staff.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					shop_assistent.Balance -= (resp.Price * tarif.AmountForCash) / 100
+					updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+
+						Id:       shop_assistent.Id,
+						BranchID: shop_assistent.BranchID,
+						TarifID:  shop_assistent.TarifID,
+						Type:     shop_assistent.Type,
+						Name:     shop_assistent.Name,
+						Balance:  shop_assistent.Balance,
+					})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->tarif.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				}
+
+			} else if resp.PaymentType == "Card" {
+				cashier.Balance -= (resp.Price * tarif.AmountForCard) / 100
+				updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+					Id:       cashier.Id,
+					BranchID: cashier.BranchID,
+					TarifID:  cashier.TarifID,
+					Type:     cashier.Type,
+					Name:     cashier.Name,
+					Balance:  cashier.Balance,
+				})
+				if err != nil {
+					h.handlerResponse(c, "storage.staffTransactiom->staff.update", http.StatusInternalServerError, err.Error())
+					return
+				}
+				h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				if len(resp.ShopAssistantID) > 0 {
+					shop_assistent, err := h.strg.Staff().GetByID(c.Request.Context(), &models.StaffPrimaryKey{Id: resp.ShopAssistantID})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->staff assistent.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					shop_assistent.Balance -= (resp.Price * tarif.AmountForCard) / 100
+					updateStaff, err := h.strg.Staff().Update(c.Request.Context(), &models.UpdateStaff{
+						Id:       shop_assistent.Id,
+						BranchID: shop_assistent.BranchID,
+						TarifID:  shop_assistent.TarifID,
+						Type:     shop_assistent.Type,
+						Name:     shop_assistent.Name,
+						Balance:  shop_assistent.Balance,
+					})
+					if err != nil {
+						h.handlerResponse(c, "storage.staffTransactiom->tarif.getById", http.StatusInternalServerError, err.Error())
+						return
+					}
+					h.handlerResponse(c, "update staff  resposne", http.StatusOK, updateStaff)
+				}
+
+			}
+		}
 	}
 	// if resp.Status == "cancel" {
 	// 	body := map[string]interface{}{}

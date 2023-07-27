@@ -148,10 +148,15 @@ func (r *staffRepo) GetList(ctx context.Context, req *models.StaffGetListRequest
 	}
 
 	if req.Search != "" {
-		where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'`
+		where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'  AND branch_id '` + req.BranchId + `'  AND  tarif_id  '` + req.TarifID + `'  AND  type  '` + req.Type + `' `
+	}
+	if req.From != "" && req.To != "" {
+		where += ` AND balance  >  '` + req.From + `' AND  balance  <  '` + req.To + `'`
+		fmt.Println("sdfsdfs")
 	}
 
 	query += where + offset + limit
+	fmt.Println(query)
 
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
@@ -252,4 +257,111 @@ func (r *staffRepo) Delete(ctx context.Context, req *models.StaffPrimaryKey) err
 		return err
 	}
 	return nil
+}
+
+func (r *staffRepo) GetTopStaff(ctx context.Context, req *models.StaffGetListRequest) (*models.StaffGetListResponse, error) {
+	var (
+		resp  = &models.StaffGetListResponse{}
+		query string
+		// where  = " WHERE deleted = false"
+		// offset = " OFFSET 0"
+		// limit  = " LIMIT 10"
+		// having = ""
+	)
+	query = `
+		SELECT
+			s.name,
+			b.name ,
+			SUM(sl.price),
+			s.type
+		FROM 
+		staff AS s 
+		JOIN sales AS sl ON sl.shop_assistent_id = s.id
+		JOIN branch AS b ON b.id = sl.branch_id
+		WHERE sl.status = 'success'
+		GROUP BY s.name,b.name,s.type
+		ORDER BY SUM(sl.price) DESC
+		
+	`
+	query2 := `
+	SELECT
+		s.name,
+		b.name ,
+		SUM(sl.price),
+		s.type
+	FROM 
+	staff AS s 
+	JOIN sales AS sl ON sl.cashier_id = s.id
+	JOIN branch AS b ON b.id = sl.branch_id
+	WHERE sl.status = 'success'
+	GROUP BY s.name,b.name,s.type
+	ORDER BY SUM(sl.price) DESC
+	
+`
+	// if req.Offset > 0 {
+	// 	offset = fmt.Sprintf(" OFFSET %d", req.Offset)
+	// }o
+	// if req.Search != "" {
+	// 	where += ` AND name ILIKE '%' || '` + req.Search + `' || '%' `
+	// }
+	// if req.From >= 0 && req.To > 0 {
+	// 	having += `HAVING balance BETWEEN  '%' || '` + cast.ToString(req.From) + `' || '%' AND '%' ` + cast.ToString(req.To) + `' || '%'`
+	// }
+	// query += where + offset + limit + having
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var (
+			name        sql.NullString
+			branch_name sql.NullString
+			earned_sum  sql.NullInt64
+			typee       sql.NullString
+		)
+		err := rows.Scan(
+			&name,
+			&branch_name,
+			&earned_sum,
+			&typee,
+		)
+		if err != nil {
+			return nil, err
+		}
+		resp.List = append(resp.List, &models.GetTopStaffs{
+			Name:       name.String,
+			BranchName: branch_name.String,
+			EarnedSum:  earned_sum.Int64,
+			Type:       typee.String,
+		})
+	}
+
+	rows, err = r.db.Query(ctx, query2)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var (
+			name        sql.NullString
+			branch_name sql.NullString
+			earned_sum  sql.NullInt64
+			typee       sql.NullString
+		)
+		err := rows.Scan(
+			&name,
+			&branch_name,
+			&earned_sum,
+			&typee,
+		)
+		if err != nil {
+			return nil, err
+		}
+		resp.List = append(resp.List, &models.GetTopStaffs{
+			Name:       name.String,
+			BranchName: branch_name.String,
+			EarnedSum:  earned_sum.Int64,
+			Type:       typee.String,
+		})
+	}
+	return resp, nil
 }

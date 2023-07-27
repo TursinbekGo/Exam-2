@@ -220,3 +220,69 @@ func (r *branchRepo) Delete(ctx context.Context, req *models.BranchPrimaryKey) e
 	}
 	return nil
 }
+
+func (r *branchRepo) GetTopBranch(ctx context.Context, req *models.BranchGetListRequest) (*models.BranchGetListResponse, error) {
+
+	var (
+		resp  = &models.BranchGetListResponse{}
+		query string
+		// where  = " WHERE deleted = false"
+		// offset = " OFFSET 0"
+		// limit  = " LIMIT 10"
+	)
+	query = `
+		SELECT
+			date(sl.created_at),
+			b.address,
+			SUM(sl.price)
+		FROM 
+		branch AS b
+		JOIN sales AS sl ON sl.branch_id = b.id
+		GROUP BY date(sl.created_at),b.address
+		ORDER BY SUM(sl.price) DESC
+
+	`
+	// if req.Offset > 0 {
+	// 	offset = fmt.Sprintf(" OFFSET %d", req.Offset)
+	// }
+
+	// if req.Limit > 0 {
+	// 	limit = fmt.Sprintf(" LIMIT %d", req.Limit)
+	// }
+
+	// if req.Search != "" {
+	// 	where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'  OR address ILIKE '%' || '` + req.Search + `' || '%' `
+	// }
+
+	// query += where + offset + limit
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var (
+			day     sql.NullString
+			address sql.NullString
+			count   sql.NullInt64
+		)
+
+		err := rows.Scan(
+			&day,
+			&address,
+			&count,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		resp.List = append(resp.List, &models.TopBranch{
+			Day:     day.String,
+			Address: address.String,
+			Count:   count.Int64,
+		})
+	}
+	return resp, nil
+}

@@ -22,6 +22,8 @@ func NewApi(r *gin.Engine, cfg *config.Config, storage storage.StorageI, logger 
 	r.PUT("/branch/:id", handler.UpdateBranch)
 	r.DELETE("/branch/:id", handler.DeleteBranch)
 
+	r.GET("/get_top_branchs", handler.GetTopBranchs)
+
 	r.POST("/staffTarif", handler.CreateStaffTarif)
 	r.GET("/staffTarif/:id", handler.GetByIdStaffTarif)
 	r.GET("/staffTarif", handler.GetListStaffTarif)
@@ -33,6 +35,8 @@ func NewApi(r *gin.Engine, cfg *config.Config, storage storage.StorageI, logger 
 	r.GET("/staff", handler.GetListStaff)
 	r.PUT("/staff/:id", handler.UpdateStaff)
 	r.DELETE("/staff/:id", handler.DeleteStaff)
+
+	r.GET("/get_top_staffs", handler.GetTOPStaffs)
 
 	r.POST("/sales", handler.CreateSales)
 	r.GET("/sales/:id", handler.GetByIdSales)

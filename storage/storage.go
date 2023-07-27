@@ -20,6 +20,7 @@ type BranchRepoI interface {
 	GetList(context.Context, *models.BranchGetListRequest) (*models.BranchGetListResponse, error)
 	Update(context.Context, *models.UpdateBranch) (int64, error)
 	Delete(context.Context, *models.BranchPrimaryKey) error
+	GetTopBranch(ctx context.Context, req *models.BranchGetListRequest) (*models.BranchGetListResponse, error)
 }
 
 type StaffTarifRepoI interface {
@@ -36,6 +37,7 @@ type StaffRepoI interface {
 	GetList(context.Context, *models.StaffGetListRequest) (*models.StaffGetListResponse, error)
 	Update(context.Context, *models.UpdateStaff) (int64, error)
 	Delete(context.Context, *models.StaffPrimaryKey) error
+	GetTopStaff(ctx context.Context, req *models.StaffGetListRequest) (*models.StaffGetListResponse, error)
 }
 
 type SalesRepoI interface {

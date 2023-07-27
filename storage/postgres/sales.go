@@ -147,6 +147,8 @@ func (r *salesRepo) GetList(ctx context.Context, req *models.SalesGetListRequest
 		where  = " WHERE deleted = false"
 		offset = " OFFSET 0"
 		limit  = " LIMIT 10"
+		having = " "
+		order  = " ORDER BY created_at DESC "
 	)
 
 	query = `
@@ -174,12 +176,13 @@ func (r *salesRepo) GetList(ctx context.Context, req *models.SalesGetListRequest
 	if req.Limit > 0 {
 		limit = fmt.Sprintf(" LIMIT %d", req.Limit)
 	}
-
 	if req.Search != "" {
-		where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'`
+		where += ` AND client_name ILIKE '%' || '` + req.Search + `' || '%'`
 	}
-
-	query += where + offset + limit
+	if len(req.From) > 0 && len(req.To) > 0 {
+		having += ` HAVING balance BETWEEN	'%' || '` + req.From + `' || '%' AND '%'` + req.To + `' || '%'`
+	}
+	query += where + order + offset + limit + having
 
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
@@ -252,7 +255,7 @@ func (r *salesRepo) Update(ctx context.Context, req *models.UpdateSales) (int64,
 		UPDATE
 		sales 
 		SET
-		branch_id : branch_id,
+		branch_id = :branch_id,
 		shop_assistent_id = :shop_assistent_id,
 		cashier_id = :cashier_id,
 		price = :price,

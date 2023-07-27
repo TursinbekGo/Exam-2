@@ -372,6 +372,106 @@ paths:
       summary: Update Branch
       tags:
       - Branch
+  /get_top_branchs:
+    get:
+      consumes:
+      - application/json
+      description: Get Top Branchs
+      operationId: get_top_branchs
+      parameters:
+      - description: offset
+        in: query
+        name: offset
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      - description: search
+        in: query
+        name: search
+        type: string
+      responses:
+        "200":
+          description: Success Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Get Top Branchs
+      tags:
+      - Get Top Branchs
+  /get_top_staffs:
+    get:
+      consumes:
+      - application/json
+      description: Get Top Staffs
+      operationId: get_top_staffs
+      parameters:
+      - description: offset
+        in: query
+        name: offset
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      - description: search
+        in: query
+        name: search
+        type: string
+      responses:
+        "200":
+          description: Success Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "500":
+          description: Server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/handler.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Get Top Staffs
+      tags:
+      - Get Top Staffs
   /sales:
     get:
       consumes:
@@ -390,6 +490,14 @@ paths:
       - description: search
         in: query
         name: search
+        type: string
+      - description: from
+        in: query
+        name: from
+        type: string
+      - description: to
+        in: query
+        name: to
         type: string
       responses:
         "200":
@@ -616,6 +724,26 @@ paths:
       - description: search
         in: query
         name: search
+        type: string
+      - description: from
+        in: query
+        name: from
+        type: string
+      - description: to
+        in: query
+        name: to
+        type: string
+      - description: branch_id
+        in: query
+        name: branch_id
+        type: string
+      - description: tarif_id
+        in: query
+        name: tarif_id
+        type: string
+      - description: type
+        in: query
+        name: type
         type: string
       responses:
         "200":
@@ -1068,6 +1196,22 @@ paths:
       - description: search
         in: query
         name: search
+        type: string
+      - description: sales_id
+        in: query
+        name: salesId
+        type: string
+      - description: staff_id
+        in: query
+        name: staffId
+        type: string
+      - description: type
+        in: query
+        name: type
+        type: string
+      - description: amount
+        in: query
+        name: amount
         type: string
       responses:
         "200":

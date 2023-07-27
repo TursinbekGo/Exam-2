@@ -84,6 +84,11 @@ func (h *handler) GetByIdStaff(c *gin.Context) {
 // @Param offset query string false "offset"
 // @Param limit query string false "limit"
 // @Param search query string false "search"
+// @Param from query string false "from"
+// @Param to query string false "to"
+// @Param branch_id query string false "branch_id"
+// @Param tarif_id query string false "tarif_id"
+// @Param type query string false "type"
 // @Success 200 {object} Response{data=string} "Success Request"
 // @Response 400 {object} Response{data=string} "Bad Request"
 // @Failure 500 {object} Response{data=string} "Server error"
@@ -102,9 +107,14 @@ func (h *handler) GetListStaff(c *gin.Context) {
 	}
 
 	resp, err := h.strg.Staff().GetList(c.Request.Context(), &models.StaffGetListRequest{
-		Offset: offset,
-		Limit:  limit,
-		Search: c.Query("search"),
+		Offset:   offset,
+		Limit:    limit,
+		Search:   c.Query("search"),
+		From:     c.Query("from"),
+		To:       c.Query("to"),
+		BranchId: c.Query("branch_id"),
+		TarifID:  c.Query("tarif_id"),
+		Type:     c.Query("type"),
 	})
 	if err != nil {
 		h.handlerResponse(c, "storage.Staff.get_list", http.StatusInternalServerError, err.Error())
@@ -194,4 +204,45 @@ func (h *handler) DeleteStaff(c *gin.Context) {
 	}
 
 	h.handlerResponse(c, "create Staff resposne", http.StatusNoContent, nil)
+}
+
+// GetTOP staffs godoc
+// @ID get_top_staffs
+// @Router /get_top_staffs [GET]
+// @Summary Get Top Staffs
+// @Description Get Top Staffs
+// @Tags Get Top Staffs
+// @Accept json
+// @Procedure json
+// @Param offset query string false "offset"
+// @Param limit query string false "limit"
+// @Param search query string false "search"
+// @Success 200 {object} Response{data=string} "Success Request"
+// @Response 400 {object} Response{data=string} "Bad Request"
+// @Failure 500 {object} Response{data=string} "Server error"
+func (h *handler) GetTOPStaffs(c *gin.Context) {
+
+	offset, err := h.getOffsetQuery(c.Query("offset"))
+	if err != nil {
+		h.handlerResponse(c, "get list Staff offset", http.StatusBadRequest, "invalid offset")
+		return
+	}
+
+	limit, err := h.getLimitQuery(c.Query("limit"))
+	if err != nil {
+		h.handlerResponse(c, "get list Staff limit", http.StatusBadRequest, "invalid limit")
+		return
+	}
+
+	resp, err := h.strg.Staff().GetTopStaff(c.Request.Context(), &models.StaffGetListRequest{
+		Offset: offset,
+		Limit:  limit,
+		Search: c.Query("search"),
+	})
+	if err != nil {
+		h.handlerResponse(c, "storage.Staff.get_list", http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	h.handlerResponse(c, "get list Staff resposne", http.StatusOK, resp)
 }

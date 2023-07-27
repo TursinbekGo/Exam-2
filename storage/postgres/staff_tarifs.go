@@ -143,7 +143,7 @@ func (r *staffTarifRepo) GetList(ctx context.Context, req *models.StaffTarifGetL
 	}
 
 	if req.Search != "" {
-		where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'`
+		where += ` AND name ILIKE '%' || '` + req.Search + `' || '%'  `
 	}
 
 	query += where + offset + limit
